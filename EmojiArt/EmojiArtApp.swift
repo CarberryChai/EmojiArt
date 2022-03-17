@@ -9,9 +9,11 @@ import SwiftUI
 
 @main
 struct EmojiArtApp: App {
+    @StateObject var model = EmojiArtDocument()
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(model)
         }
     }
 }
