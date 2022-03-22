@@ -9,13 +9,15 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var document: EmojiArtDocument
+    @State var zoomScale: CGFloat = 1
     let defaultEmojiSize: CGFloat = 40
+
     var body: some View {
         VStack {
             documentBody
             palette
         }.onAppear {
-            document.addEmoji("🍇", at: (-100, 50), size: 50)
+            document.addEmoji("🍇", at: (-100, 50), size: defaultEmojiSize / zoomScale)
         }
     }
 
@@ -24,16 +26,23 @@ struct ContentView: View {
             ZStack {
                 Color.white.overlay(
                     OptionalImage(uiImage: document.backgroundImage)
-                        .frame(width: geometry.size.width, height: geometry.size.height)
                         .aspectRatio(contentMode: .fit)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .clipped()
                         .position(convertFromEmojiCoordinates((0, 0), in: geometry))
                 )
-                ForEach(document.emojis) { emoji in
-                    Text(emoji.text)
-                        .font(.system(size: fontSize(for: emoji)))
-                        .position(position(for: emoji, in: geometry))
+                    .gesture(doubleTapToFit(in: geometry.size))
+                if document.bgImgLoading {
+                    ProgressView().scaleEffect(2)
+                } else {
+                    ForEach(document.emojis) { emoji in
+                        Text(emoji.text)
+                            .font(.system(size: fontSize(for: emoji)))
+                            .position(position(for: emoji, in: geometry))
+                    }
                 }
             }
+                .clipped()
                 .onDrop(of: [.plainText, .url, .data], isTargeted: nil) { providers, location in
                 var found = providers.loadObjects(ofType: URL.self) { url in
                     document.setBackground(.url(url.imageURL))
@@ -48,7 +57,7 @@ struct ContentView: View {
                 if !found {
                     found = providers.loadObjects(ofType: String.self) { string in
                         if let c = string.first, c.isEmoji {
-                            document.addEmoji(String(c), at: convertToEmojiCoordinates(location, in: geometry), size: defaultEmojiSize)
+                            document.addEmoji(String(c), at: convertToEmojiCoordinates(location, in: geometry), size: defaultEmojiSize / zoomScale)
                         }
                     }
                 }
@@ -57,22 +66,42 @@ struct ContentView: View {
         }
     }
 
+    private func doubleTapToFit(in size: CGSize) -> some Gesture {
+        TapGesture(count: 2)
+            .onEnded {
+            withAnimation {
+                zoomToFit(document.backgroundImage, in: size)
+            }
+        }
+    }
+
+    private func zoomToFit(_ image: UIImage?, in size: CGSize) {
+        guard let img = image, img.size.width > 0, img.size.height > 0, size.width > 0, size.height > 0 else { return }
+        let hZoom = size.width / img.size.width
+        let vZoom = size.height / img.size.height
+        zoomScale = min(hZoom, vZoom)
+    }
+
     private func position(for emoji: EmojiArtModel.Emoji, in geometry: GeometryProxy) -> CGPoint {
         convertFromEmojiCoordinates((emoji.x, emoji.y), in: geometry)
     }
 
     private func convertToEmojiCoordinates(_ location: CGPoint, in geometry: GeometryProxy) -> (x: Int, y: Int) {
         let center = geometry.frame(in: .local).center
-        return (Int(location.x - center.x), Int(location.y - center.y))
+        let location = CGPoint(x: (location.x - center.x) / zoomScale, y: (location.y - center.y) / zoomScale)
+        return (Int(location.x), Int(location.y))
     }
 
     private func convertFromEmojiCoordinates(_ location: (x: Int, y: Int), in geometry: GeometryProxy) -> CGPoint {
         let center = geometry.frame(in: .local).center
-        return CGPoint(x: center.x + CGFloat(location.x), y: center.y + CGFloat(location.y))
+        return CGPoint(
+            x: center.x + CGFloat(location.x) * zoomScale,
+            y: center.y + CGFloat(location.y) * zoomScale
+        )
     }
 
     private func fontSize(for emoji: EmojiArtModel.Emoji) -> CGFloat {
-        CGFloat(emoji.size)
+        CGFloat(emoji.size) * zoomScale
     }
 
     var palette: some View {

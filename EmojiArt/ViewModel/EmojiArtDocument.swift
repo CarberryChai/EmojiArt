@@ -34,28 +34,29 @@ class EmojiArtDocument: ObservableObject {
     private func fetchBackGroundImageDataIfNecessary() {
         backgroundImage = nil
         switch emojiArt.background {
-            case .imageData(let data):
-                backgroundImage = UIImage(data: data)
-            case.url(let url):
-                DispatchQueue.global(qos: .userInitiated).async {
-                    let imgData = try? Data(contentsOf: url)
-                    DispatchQueue.main.async { [weak self] in
-                        if self?.emojiArt.background == EmojiArtModel.BackGround.url(url) {
-                            if let imageData = imgData {
-                                self?.backgroundImage = UIImage(data: imageData)
-                            }
+        case .imageData(let data):
+            backgroundImage = UIImage(data: data)
+        case .url(let url):
+                bgImgLoading = true
+            DispatchQueue.global(qos: .userInitiated).async {
+                let imgData = try? Data(contentsOf: url)
+                DispatchQueue.main.async { [weak self] in
+                    if self?.emojiArt.background == EmojiArtModel.BackGround.url(url) {
+                        self?.bgImgLoading = false
+                        if let imageData = imgData {
+                            self?.backgroundImage = UIImage(data: imageData)
                         }
                     }
                 }
-            case .blank:
-                break
+            }
+        case .blank:
+            break
         }
     }
 
 
     func setBackground(_ background: BackGround) {
         emojiArt.background = background
-        print(background)
     }
 
     func addEmoji(_ emoji: String, at location: (x: Int, y: Int), size: CGFloat) {
