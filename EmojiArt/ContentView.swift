@@ -9,7 +9,18 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var document: EmojiArtDocument
-    @State var zoomScale: CGFloat = 1
+    @State var steadyStateZoomScale: CGFloat = 1
+    @GestureState var gestureZoomScale: CGFloat = 1
+    private var zoomScale: CGFloat {
+        steadyStateZoomScale * gestureZoomScale
+    }
+
+    @State var steadyStatePanOffset: CGSize = .zero
+    @GestureState var gesturePanOffset: CGSize = .zero
+    private var panOffset: CGSize {
+        (steadyStatePanOffset + gesturePanOffset) * zoomScale
+    }
+
     let defaultEmojiSize: CGFloat = 40
 
     var body: some View {
@@ -26,9 +37,7 @@ struct ContentView: View {
             ZStack {
                 Color.white.overlay(
                     OptionalImage(uiImage: document.backgroundImage)
-                        .aspectRatio(contentMode: .fit)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .clipped()
+                        .scaleEffect(zoomScale)
                         .position(convertFromEmojiCoordinates((0, 0), in: geometry))
                 )
                     .gesture(doubleTapToFit(in: geometry.size))
@@ -37,12 +46,14 @@ struct ContentView: View {
                 } else {
                     ForEach(document.emojis) { emoji in
                         Text(emoji.text)
+                            .scaleEffect(zoomScale)
                             .font(.system(size: fontSize(for: emoji)))
                             .position(position(for: emoji, in: geometry))
                     }
                 }
             }
                 .clipped()
+                .gesture(panGesture.simultaneously(with: zoomGesture))
                 .onDrop(of: [.plainText, .url, .data], isTargeted: nil) { providers, location in
                 var found = providers.loadObjects(ofType: URL.self) { url in
                     document.setBackground(.url(url.imageURL))
@@ -65,6 +76,26 @@ struct ContentView: View {
             }
         }
     }
+    
+    private var panGesture: some Gesture {
+        DragGesture()
+            .updating($gesturePanOffset) { latestDragPanOffset, gesturePanOffset, _ in
+                gesturePanOffset = latestDragPanOffset.translation / zoomScale
+            }
+            .onEnded { finalDragGestureValue in
+                steadyStatePanOffset = steadyStatePanOffset + finalDragGestureValue.translation / zoomScale
+            }
+    }
+
+    private var zoomGesture: some Gesture {
+        MagnificationGesture()
+            .updating($gestureZoomScale, body: { theLastestState, gestureZoomScale, _ in
+            gestureZoomScale = theLastestState
+        })
+            .onEnded { theEndedScaleState in
+            steadyStateZoomScale = theEndedScaleState
+        }
+    }
 
     private func doubleTapToFit(in size: CGSize) -> some Gesture {
         TapGesture(count: 2)
@@ -79,7 +110,8 @@ struct ContentView: View {
         guard let img = image, img.size.width > 0, img.size.height > 0, size.width > 0, size.height > 0 else { return }
         let hZoom = size.width / img.size.width
         let vZoom = size.height / img.size.height
-        zoomScale = min(hZoom, vZoom)
+        steadyStatePanOffset = .zero
+        steadyStateZoomScale = min(hZoom, vZoom)
     }
 
     private func position(for emoji: EmojiArtModel.Emoji, in geometry: GeometryProxy) -> CGPoint {
@@ -88,15 +120,15 @@ struct ContentView: View {
 
     private func convertToEmojiCoordinates(_ location: CGPoint, in geometry: GeometryProxy) -> (x: Int, y: Int) {
         let center = geometry.frame(in: .local).center
-        let location = CGPoint(x: (location.x - center.x) / zoomScale, y: (location.y - center.y) / zoomScale)
+        let location = CGPoint(x: (location.x - panOffset.width - center.x) / zoomScale, y: (location.y - panOffset.height - center.y) / zoomScale)
         return (Int(location.x), Int(location.y))
     }
 
     private func convertFromEmojiCoordinates(_ location: (x: Int, y: Int), in geometry: GeometryProxy) -> CGPoint {
         let center = geometry.frame(in: .local).center
         return CGPoint(
-            x: center.x + CGFloat(location.x) * zoomScale,
-            y: center.y + CGFloat(location.y) * zoomScale
+            x: center.x + CGFloat(location.x) * zoomScale + panOffset.width,
+            y: center.y + CGFloat(location.y) * zoomScale + panOffset.height
         )
     }
 
