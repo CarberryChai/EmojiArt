@@ -54,37 +54,41 @@ struct ContentView: View {
             }
                 .clipped()
                 .gesture(panGesture.simultaneously(with: zoomGesture))
-                .onDrop(of: [.plainText, .url, .data], isTargeted: nil) { providers, location in
-                var found = providers.loadObjects(ofType: URL.self) { url in
-                    document.setBackground(.url(url.imageURL))
-                }
-                if !found {
-                    found = providers.loadObjects(ofType: UIImage.self, using: { img in
-                        if let data = img.jpegData(compressionQuality: 1) {
-                            document.setBackground(.imageData(data))
-                        }
-                    })
-                }
-                if !found {
-                    found = providers.loadObjects(ofType: String.self) { string in
-                        if let c = string.first, c.isEmoji {
-                            document.addEmoji(String(c), at: convertToEmojiCoordinates(location, in: geometry), size: defaultEmojiSize / zoomScale)
-                        }
-                    }
-                }
-                return found
-            }
+                .onDrop(of: [.plainText, .url, .data], isTargeted: nil) { dealTheDrop($0, $1, geometry) }
         }
     }
-    
+
+    // MARK deal the drop
+
+    private func dealTheDrop(_ providers: [NSItemProvider], _ location: CGPoint, _ geometry: GeometryProxy) -> Bool {
+        var found = providers.loadObjects(ofType: URL.self) { url in
+            document.setBackground(.url(url.imageURL))
+        }
+        if !found {
+            found = providers.loadObjects(ofType: UIImage.self, using: { img in
+                if let data = img.jpegData(compressionQuality: 1) {
+                    document.setBackground(.imageData(data))
+                }
+            })
+        }
+        if !found {
+            found = providers.loadObjects(ofType: String.self) { string in
+                if let c = string.first, c.isEmoji {
+                    document.addEmoji(String(c), at: convertToEmojiCoordinates(location, in: geometry), size: defaultEmojiSize / zoomScale)
+                }
+            }
+        }
+        return found
+    }
+
     private var panGesture: some Gesture {
         DragGesture()
             .updating($gesturePanOffset) { latestDragPanOffset, gesturePanOffset, _ in
-                gesturePanOffset = latestDragPanOffset.translation / zoomScale
-            }
+            gesturePanOffset = latestDragPanOffset.translation / zoomScale
+        }
             .onEnded { finalDragGestureValue in
-                steadyStatePanOffset = steadyStatePanOffset + finalDragGestureValue.translation / zoomScale
-            }
+            steadyStatePanOffset = steadyStatePanOffset + finalDragGestureValue.translation / zoomScale
+        }
     }
 
     private var zoomGesture: some Gesture {
