@@ -8,7 +8,7 @@
 import Foundation
 import SwiftUI
 
-struct EmojiArtModel {
+struct EmojiArtModel: Codable {
     var background: BackGround
     var emojis: [Emoji]
 
@@ -17,12 +17,25 @@ struct EmojiArtModel {
         self.emojis = []
     }
 
+    init(json: Data) throws {
+        self = try JSONDecoder().decode(EmojiArtModel.self, from: json)
+    }
+
+    init(url: URL) throws {
+        let data = try Data(contentsOf: url)
+        self = try EmojiArtModel(json: data)
+    }
+
     mutating func addEmoji(_ text: String, at location: (x: Int, y: Int), size: Int) {
         emojis.append(Emoji(text: text, x: location.x, y: location.y, size: size, id: emojiCounter))
         emojiCounter += 1
     }
 
-    struct Emoji: Identifiable, Hashable {
+    func json() throws -> Data {
+        try JSONEncoder().encode(self)
+    }
+
+    struct Emoji: Identifiable, Hashable, Codable {
         let text: String
         var x: Int // offset from the center
         var y: Int // offset from the center

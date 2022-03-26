@@ -15,6 +15,7 @@ class EmojiArtDocument: ObservableObject {
 
     @Published private(set) var emojiArt: EmojiArtModel {
         didSet {
+            scheduleAutosave()
             if emojiArt.background != oldValue.background {
                 fetchBackGroundImageDataIfNecessary()
             }
@@ -24,11 +25,53 @@ class EmojiArtDocument: ObservableObject {
     @Published var bgImgLoading = false
 
     init() {
-        emojiArt = EmojiArtModel()
+        if let url = AutoSave.url, let autosavedEmojiArt = try? EmojiArtModel(url: url) {
+            emojiArt = autosavedEmojiArt
+            fetchBackGroundImageDataIfNecessary()
+        } else {
+            emojiArt = EmojiArtModel()
+        }
     }
 
     var emojis: [Emoji] { emojiArt.emojis }
     var background: BackGround { emojiArt.background }
+    private var autosaveTimer: Timer?
+
+    private func scheduleAutosave() {
+        autosaveTimer?.invalidate()
+        autosaveTimer = Timer.scheduledTimer(withTimeInterval: AutoSave.coalescingInterval, repeats: false) { _ in
+            self.autosave()
+        }
+    }
+
+    private struct AutoSave {
+        static let filename = "Autosaved.emojiart"
+        static var url: URL? {
+            let documentDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+            return documentDirectory?.appendingPathComponent(filename)
+        }
+        static let coalescingInterval = 5.0
+    }
+
+    private func autosave() {
+        if let url = AutoSave.url {
+            save(to: url)
+        }
+    }
+
+    private func save(to url: URL) {
+        let thisfunction = "\(String(describing: self)).\(#function)"
+        do {
+            let data: Data = try emojiArt.json()
+            print("json = \(String(data: data, encoding: .utf8) ?? "nil")")
+            print("\(thisfunction) success!!")
+            try data.write(to: url)
+        } catch let encodingError where encodingError is EncodingError {
+            print("\(thisfunction) could not encode EmojiArt to JSON becasue \(encodingError.localizedDescription)")
+        } catch {
+            print("\(thisfunction)  \(error)")
+        }
+    }
 
 
     private func fetchBackGroundImageDataIfNecessary() {
@@ -37,7 +80,7 @@ class EmojiArtDocument: ObservableObject {
         case .imageData(let data):
             backgroundImage = UIImage(data: data)
         case .url(let url):
-                bgImgLoading = true
+            bgImgLoading = true
             DispatchQueue.global(qos: .userInitiated).async {
                 let imgData = try? Data(contentsOf: url)
                 DispatchQueue.main.async { [weak self] in

@@ -27,8 +27,6 @@ struct ContentView: View {
         VStack {
             documentBody
             palette
-        }.onAppear {
-            document.addEmoji("🍇", at: (-100, 50), size: defaultEmojiSize / zoomScale)
         }
     }
 
