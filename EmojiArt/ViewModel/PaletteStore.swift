@@ -8,8 +8,8 @@
 import Foundation
 import Combine
 
-struct Palette: Identifiable {
-    let id: String = UUID().uuidString
+struct Palette: Identifiable, Codable {
+    var id: String = UUID().uuidString
     var name: String
     var emojis: String
 }
@@ -17,10 +17,43 @@ struct Palette: Identifiable {
 final class PaletteStore: ObservableObject {
     let name: String
 
-    @Published var palettes: [Palette] = []
+    @Published var palettes: [Palette] = [] {
+        didSet {
+            storeInUserDefaults()
+        }
+    }
+
+    private var userDefaultsKey: String {
+        "PaletteStore:" + name
+    }
+
+    private func storeInUserDefaults() {
+        UserDefaults.standard.set(try? JSONEncoder().encode(palettes), forKey: userDefaultsKey)
+//        UserDefaults.standard.set(palettes.map {[$0.name, $0.emojis, $0.id]}, forKey: userDefaultsKey)
+    }
+
+    private func restoreFromUserDefaults() {
+        if let jsonData = UserDefaults.standard.data(forKey: userDefaultsKey) {
+            do {
+                let decodedPalettes = try JSONDecoder().decode([Palette].self, from: jsonData)
+                palettes = decodedPalettes
+            } catch {
+                print("PaletteStore.restoreFromUserDefaults json decode error. \(error)")
+            }
+        }
+//        if let palettesAsPropertyList = UserDefaults.standard.array(forKey: userDefaultsKey) as? [[String]] {
+//            for paletteAsArray in palettesAsPropertyList {
+//                if paletteAsArray.count == 3, !palettes.contains(where: { $0.id == paletteAsArray[2] }) {
+//                    let palette = Palette(name: paletteAsArray[0], emojis: paletteAsArray[1])
+//                    palettes.append(palette)
+//                }
+//            }
+//        }
+    }
 
     init(named name: String) {
         self.name = name
+        restoreFromUserDefaults()
         if palettes.isEmpty {
             palettes = [
                 Palette(name: "Vehicles", emojis: "🚙🚗🚘🚕🚖🏎🚚🛻🚛🚐🚓🚔🚑🚒🚀✈️🛫🛬🛩🚁🛸🚲🏍🛶⛵️🚤🛥🛳⛴🚢🚂🚝🚅🚆🚊🚉🚇🛺🚜"),
