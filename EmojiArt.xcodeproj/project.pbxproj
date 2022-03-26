@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6118252627EEAF950062C8E8 /* PaletteStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6118252527EEAF950062C8E8 /* PaletteStore.swift */; };
 		6191177C27E1AF8D007DFFD4 /* EmojiArtApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6191177B27E1AF8D007DFFD4 /* EmojiArtApp.swift */; };
 		6191177E27E1AF8D007DFFD4 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6191177D27E1AF8D007DFFD4 /* ContentView.swift */; };
 		6191178027E1AF8F007DFFD4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6191177F27E1AF8F007DFFD4 /* Assets.xcassets */; };
@@ -19,6 +20,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		6118252527EEAF950062C8E8 /* PaletteStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaletteStore.swift; sourceTree = "<group>"; };
 		6191177827E1AF8D007DFFD4 /* EmojiArt.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EmojiArt.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6191177B27E1AF8D007DFFD4 /* EmojiArtApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiArtApp.swift; sourceTree = "<group>"; };
 		6191177D27E1AF8D007DFFD4 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -102,6 +104,7 @@
 			isa = PBXGroup;
 			children = (
 				6191179427E323B5007DFFD4 /* EmojiArtDocument.swift */,
+				6118252527EEAF950062C8E8 /* PaletteStore.swift */,
 			);
 			path = ViewModel;
 			sourceTree = "<group>";
@@ -177,6 +180,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6191179227E32143007DFFD4 /* EmojiArtMode.Background.swift in Sources */,
+				6118252627EEAF950062C8E8 /* PaletteStore.swift in Sources */,
 				6191177E27E1AF8D007DFFD4 /* ContentView.swift in Sources */,
 				6191177C27E1AF8D007DFFD4 /* EmojiArtApp.swift in Sources */,
 				6191179027E1C438007DFFD4 /* UtilityViews.swift in Sources */,
