@@ -91,9 +91,9 @@ struct ContentView: View {
 
     private var zoomGesture: some Gesture {
         MagnificationGesture()
-            .updating($gestureZoomScale, body: { theLastestState, gestureZoomScale, _ in
+            .updating($gestureZoomScale) { theLastestState, gestureZoomScale, _ in
             gestureZoomScale = theLastestState
-        })
+        }
             .onEnded { theEndedScaleState in
             steadyStateZoomScale = theEndedScaleState
         }
