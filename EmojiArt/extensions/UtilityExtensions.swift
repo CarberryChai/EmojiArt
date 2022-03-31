@@ -51,7 +51,7 @@ extension RangeReplaceableCollection where Element: Identifiable {
         }
         set {
             if let index = index(matching: element) {
-                replaceSubrange(index...index, with: [newValue])
+                insert(newValue, at: index)
             }
         }
     }
