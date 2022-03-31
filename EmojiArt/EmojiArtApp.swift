@@ -15,6 +15,7 @@ struct EmojiArtApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(model)
+                .environmentObject(paletteStore)
         }
     }
 }

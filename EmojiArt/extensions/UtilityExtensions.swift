@@ -78,14 +78,9 @@ extension Set where Element: Identifiable {
 // (thus withNoRepeatedCharacters below)
 
 extension String {
-    var withNoRepeatedCharacters: String {
-        var uniqued = ""
-        for ch in self {
-            if !uniqued.contains(ch) {
-                uniqued.append(ch)
-            }
-        }
-        return uniqued
+    var removingDuplicateCharacters: Self {
+        var set = Set<Character>()
+        return filter { set.insert($0).inserted }
     }
 }
 
@@ -252,3 +247,4 @@ extension Array where Element == NSItemProvider {
         loadObjects(ofType: theType, firstOnly: true, using: load)
     }
 }
+
